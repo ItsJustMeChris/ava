@@ -238,4 +238,84 @@ describe('createJournalPlugin', () => {
       console.error = originalError;
     }
   });
+
+  test('summary returns correct structure with no entries', async () => {
+    const plugin = createJournalPlugin({
+      name: 'note',
+      plural: 'notes',
+      description: 'Take notes',
+      addVerb: 'Add',
+      dataDir,
+    });
+
+    if (!plugin.summary) throw new Error('Missing summary hook');
+    const result = await plugin.summary();
+
+    expect(result.title).toBe('Notes');
+    expect(result.count).toBe(0);
+    expect(result.entries).toHaveLength(0);
+  });
+
+  test('summary returns most recent 3 entries in reverse order', async () => {
+    const plugin = createJournalPlugin({
+      name: 'note',
+      plural: 'notes',
+      description: 'Take notes',
+      addVerb: 'Add',
+      dataDir,
+    });
+
+    const addCmd = plugin.commands[0];
+    if (!addCmd) throw new Error('Missing add command');
+
+    const originalLog = console.log;
+    console.log = mock(() => { /* suppress */ });
+
+    try {
+      await addCmd.execute(['first']);
+      await addCmd.execute(['second']);
+      await addCmd.execute(['third']);
+      await addCmd.execute(['fourth']);
+    } finally {
+      console.log = originalLog;
+    }
+
+    if (!plugin.summary) throw new Error('Missing summary hook');
+    const result = await plugin.summary();
+
+    expect(result.count).toBe(4);
+    expect(result.entries).toHaveLength(3);
+    expect(result.entries[0]?.text).toBe('fourth');
+    expect(result.entries[1]?.text).toBe('third');
+    expect(result.entries[2]?.text).toBe('second');
+  });
+
+  test('summary entries include createdAt timestamps', async () => {
+    const plugin = createJournalPlugin({
+      name: 'note',
+      plural: 'notes',
+      description: 'Take notes',
+      addVerb: 'Add',
+      dataDir,
+    });
+
+    const addCmd = plugin.commands[0];
+    if (!addCmd) throw new Error('Missing add command');
+
+    const originalLog = console.log;
+    console.log = mock(() => { /* suppress */ });
+
+    try {
+      await addCmd.execute(['test entry']);
+    } finally {
+      console.log = originalLog;
+    }
+
+    if (!plugin.summary) throw new Error('Missing summary hook');
+    const result = await plugin.summary();
+
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0]?.createdAt).toBeDefined();
+    expect(() => new Date(result.entries[0]?.createdAt ?? '')).not.toThrow();
+  });
 });

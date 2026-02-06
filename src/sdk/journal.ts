@@ -1,4 +1,4 @@
-import type { AvaPlugin, Entry, JournalConfig } from './types.ts';
+import type { AvaPlugin, Entry, JournalConfig, PluginSummary } from './types.ts';
 import { Storage } from './storage.ts';
 import { ANSI, colorize, formatEntryLine, formatRelativeTime } from './format.ts';
 
@@ -45,9 +45,20 @@ async function handleRemove(
 export function createJournalPlugin(config: JournalConfig): AvaPlugin {
   const storage = new Storage<Entry>(config.plural, config.dataDir);
 
+  const MAX_SUMMARY_ENTRIES = 3;
+
   return {
     name: config.name,
     description: config.description,
+    async summary(): Promise<PluginSummary> {
+      const entries = await storage.loadAll();
+      const recent = entries.slice(-MAX_SUMMARY_ENTRIES).reverse();
+      return {
+        title: config.plural.charAt(0).toUpperCase() + config.plural.slice(1),
+        count: entries.length,
+        entries: recent.map((e) => ({ text: e.text, createdAt: e.createdAt })),
+      };
+    },
     commands: [
       {
         name: config.name,

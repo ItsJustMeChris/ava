@@ -35,25 +35,40 @@ afterEach(async () => {
 });
 
 describe('CLI integration', () => {
-  test('shows help with no arguments', async () => {
+  test('shows welcome dashboard with no arguments and no entries', async () => {
     const { stdout, exitCode } = await runCli([], makeDataDir());
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('Ava');
+    expect(stdout).toContain('Welcome to Ava');
     expect(stdout).toContain('todo');
     expect(stdout).toContain('thought');
     expect(stdout).toContain('idea');
+  });
+
+  test('shows dashboard with entries when no arguments', async () => {
+    const dataDir = makeDataDir();
+
+    await runCli(['todo', 'Buy milk'], dataDir);
+    await runCli(['idea', 'Build a rocket'], dataDir);
+
+    const { stdout, exitCode } = await runCli([], dataDir);
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('Dashboard');
+    expect(stdout).toContain('Buy milk');
+    expect(stdout).toContain('Build a rocket');
   });
 
   test('shows help with help command', async () => {
     const { stdout, exitCode } = await runCli(['help'], makeDataDir());
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Ava');
+    expect(stdout).toContain('todo');
   });
 
   test('shows help with --help flag', async () => {
     const { stdout, exitCode } = await runCli(['--help'], makeDataDir());
     expect(exitCode).toBe(0);
     expect(stdout).toContain('Ava');
+    expect(stdout).toContain('todo');
   });
 
   test('exits with error for unknown command', async () => {

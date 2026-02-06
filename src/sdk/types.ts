@@ -17,11 +17,19 @@ export interface AvaCommand {
   readonly execute: (args: readonly string[]) => Promise<void>;
 }
 
+/** Summary data a plugin contributes to the dashboard. */
+export interface PluginSummary {
+  readonly title: string;
+  readonly count: number;
+  readonly entries: readonly { readonly text: string; readonly createdAt: string }[];
+}
+
 /** A plugin that provides one or more commands to the CLI. */
 export interface AvaPlugin {
   readonly name: string;
   readonly description: string;
   readonly commands: readonly AvaCommand[];
+  readonly summary?: () => Promise<PluginSummary>;
 }
 
 /** Configuration for the journal plugin factory. */
