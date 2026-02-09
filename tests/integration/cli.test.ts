@@ -164,3 +164,25 @@ describe('CLI integration', () => {
     expect(stderr).toContain('Error');
   });
 });
+
+describe('ask command integration', () => {
+  test('exits with error when no prompt provided', async () => {
+    const { stderr, exitCode } = await runCli(['ask'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Please provide a question');
+  });
+
+  test('shows ask command in help output', async () => {
+    const { stdout, exitCode } = await runCli(['help'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('ask');
+  });
+
+  const hasOpenAIKey = process.env.OPENAI_API_KEY !== undefined && process.env.OPENAI_API_KEY !== '';
+
+  test.skipIf(!hasOpenAIKey)('streams a response for a simple question', async () => {
+    const { stdout, exitCode } = await runCli(['ask', 'What is 2+2? Reply with just the number.'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('4');
+  }, 30_000);
+});

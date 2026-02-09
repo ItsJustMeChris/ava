@@ -23,5 +23,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@providerprotocol/ai": "^0.0.40"
   }
 }
