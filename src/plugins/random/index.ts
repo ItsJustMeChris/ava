@@ -1,7 +1,7 @@
 /** Random value generator plugin for Ava CLI. */
 
 import type { AvaPlugin } from '../../sdk/types.ts';
-import { ANSI, colorize } from '../../sdk/format.ts';
+import { ANSI, colorize, rgbFg } from '../../sdk/format.ts';
 import {
   generateBytes,
   generateColor,
@@ -139,10 +139,20 @@ const SUBCOMMANDS: readonly Subcommand[] = [
   },
   {
     name: 'color',
-    usage: 'random color',
+    usage: 'random color [count=1]',
     description: 'Random hex color code (#a3f2b1)',
-    run() {
-      console.log(colorize(generateColor(), ANSI.cyan));
+    run(args) {
+      const count = args[0] !== undefined ? parsePositiveInt(args[0]) : 1;
+      if (count === undefined) {
+        console.error(colorize('Error: Count must be a positive integer.', ANSI.red));
+        process.exitCode = 1;
+        return;
+      }
+      for (let i = 0; i < count; i++) {
+        const hex = generateColor();
+        const swatch = colorize('█████', rgbFg(hex));
+        console.log(`${swatch} ${colorize(hex, rgbFg(hex))}`);
+      }
     },
   },
 ];

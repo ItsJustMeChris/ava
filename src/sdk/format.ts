@@ -18,6 +18,15 @@ export function colorize(text: string, color: string): string {
   return `${color}${text}${ANSI.reset}`;
 }
 
+/** Builds an ANSI 24-bit true-color foreground escape from a hex color string (e.g. `#a3f2b1`). */
+export function rgbFg(hex: string): string {
+  const raw = hex.startsWith('#') ? hex.slice(1) : hex;
+  const r = parseInt(raw.slice(0, 2), 16);
+  const g = parseInt(raw.slice(2, 4), 16);
+  const b = parseInt(raw.slice(4, 6), 16);
+  return `\x1b[38;2;${String(r)};${String(g)};${String(b)}m`;
+}
+
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;

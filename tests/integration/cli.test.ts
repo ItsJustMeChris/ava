@@ -268,7 +268,17 @@ describe('random command integration', () => {
     const { stdout, exitCode } = await runCli(['random', 'color'], makeDataDir());
     expect(exitCode).toBe(0);
     const clean = stdout.trim().replace(ANSI_PATTERN, '');
-    expect(clean).toMatch(/^#[0-9a-f]{6}$/);
+    expect(clean).toMatch(/^█{5} #[0-9a-f]{6}$/);
+  });
+
+  test('generates multiple random colors with count', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'color', '3'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const lines = stdout.trim().replace(ANSI_PATTERN, '').split('\n');
+    expect(lines).toHaveLength(3);
+    for (const line of lines) {
+      expect(line).toMatch(/^█{5} #[0-9a-f]{6}$/);
+    }
   });
 
   test('errors on unknown subcommand', async () => {
