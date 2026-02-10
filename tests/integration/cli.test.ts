@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
+const ANSI_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 const SCRATCHPAD = '/private/tmp/claude-501/ava-cli-tests';
 const CLI_PATH = join(import.meta.dirname, '..', '..', 'index.ts');
 
@@ -185,4 +186,112 @@ describe('ask command integration', () => {
     expect(exitCode).toBe(0);
     expect(stdout).toContain('4');
   }, 30_000);
+});
+
+describe('random command integration', () => {
+  test('shows help with no subcommand', async () => {
+    const { stdout, exitCode } = await runCli(['random'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('random');
+    expect(stdout).toContain('bytes');
+    expect(stdout).toContain('uuid');
+    expect(stdout).toContain('color');
+  });
+
+  test('generates random bytes', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'bytes'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toMatch(/[0-9a-f]{32}/);
+  });
+
+  test('generates random bytes with custom length', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'bytes', '8'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toMatch(/[0-9a-f]{16}/);
+  });
+
+  test('generates random words', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'words'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const clean = stdout.trim().replace(ANSI_PATTERN, '');
+    const parts = clean.split('-');
+    expect(parts).toHaveLength(4);
+  });
+
+  test('generates random string', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'string'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toMatch(/[A-Za-z0-9]/);
+  });
+
+  test('generates random playful name', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'playful'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const clean = stdout.trim().replace(ANSI_PATTERN, '');
+    const parts = clean.split('-');
+    expect(parts).toHaveLength(4);
+  });
+
+  test('generates uuid', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'uuid'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const clean = stdout.trim().replace(ANSI_PATTERN, '');
+    expect(clean).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
+  test('generates random int', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'int'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const clean = stdout.trim().replace(ANSI_PATTERN, '');
+    const num = Number(clean);
+    expect(Number.isInteger(num)).toBe(true);
+    expect(num).toBeGreaterThanOrEqual(0);
+    expect(num).toBeLessThanOrEqual(100);
+  });
+
+  test('generates random int with custom range', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'int', '1', '5'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const clean = stdout.trim().replace(ANSI_PATTERN, '');
+    const num = Number(clean);
+    expect(num).toBeGreaterThanOrEqual(1);
+    expect(num).toBeLessThanOrEqual(5);
+  });
+
+  test('generates random hex', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'hex'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toMatch(/[0-9a-f]{32}/);
+  });
+
+  test('generates random color', async () => {
+    const { stdout, exitCode } = await runCli(['random', 'color'], makeDataDir());
+    expect(exitCode).toBe(0);
+    const clean = stdout.trim().replace(ANSI_PATTERN, '');
+    expect(clean).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  test('errors on unknown subcommand', async () => {
+    const { stderr, exitCode } = await runCli(['random', 'bogus'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Unknown random type');
+  });
+
+  test('errors on invalid numeric argument', async () => {
+    const { stderr, exitCode } = await runCli(['random', 'bytes', 'abc'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Error');
+  });
+
+  test('errors when int min >= max', async () => {
+    const { stderr, exitCode } = await runCli(['random', 'int', '10', '5'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('min must be less than max');
+  });
+
+  test('shows random command in help output', async () => {
+    const { stdout, exitCode } = await runCli(['help'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('random');
+  });
 });
