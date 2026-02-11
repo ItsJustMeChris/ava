@@ -305,3 +305,48 @@ describe('random command integration', () => {
     expect(stdout).toContain('random');
   });
 });
+
+describe('chat command integration', () => {
+  test('shows chat and chats commands in help output', async () => {
+    const { stdout, exitCode } = await runCli(['help'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('chat');
+    expect(stdout).toContain('chats');
+  });
+
+  test('shows empty message when listing with no chats', async () => {
+    const { stdout, exitCode } = await runCli(['chats'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('No chats yet');
+  });
+
+  test('errors with invalid resume index', async () => {
+    const { stderr, exitCode } = await runCli(['chat', 'abc'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('not a valid index');
+  });
+
+  test('errors with out-of-range resume index', async () => {
+    const { stderr, exitCode } = await runCli(['chat', '99'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('No chat at index');
+  });
+
+  test('chats remove errors with no index', async () => {
+    const { stderr, exitCode } = await runCli(['chats', 'remove'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Error');
+  });
+
+  test('chats remove errors with invalid index', async () => {
+    const { stderr, exitCode } = await runCli(['chats', 'remove', 'xyz'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Error');
+  });
+
+  test('chats remove errors with out-of-range index', async () => {
+    const { stderr, exitCode } = await runCli(['chats', 'remove', '5'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Error');
+  });
+});

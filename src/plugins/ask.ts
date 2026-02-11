@@ -1,36 +1,8 @@
 import type { AvaPlugin } from '../sdk/types.ts';
 import { ANSI, colorize } from '../sdk/format.ts';
+import { buildSystemPrompt } from '../sdk/system-prompt.ts';
 import { llm } from '@providerprotocol/ai';
 import { openai } from '@providerprotocol/ai/openai';
-import { hostname, userInfo } from 'node:os';
-
-/** Builds a system prompt with local context. */
-function buildSystemPrompt(): string {
-  const now = new Date();
-  const datetime = now.toLocaleString(undefined, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short',
-  });
-  const cwd = process.cwd();
-  const user = userInfo().username;
-  const host = hostname();
-  const shell = process.env.SHELL ?? 'unknown';
-
-  return [
-    'You are Ava, a concise and helpful personal CLI assistant.',
-    'Always refer to yourself as Ava. Never use any other name or identity.',
-    `Current date/time: ${datetime}`,
-    `User: ${user} on ${host}`,
-    `Working directory: ${cwd}`,
-    `Shell: ${shell}`,
-    `Platform: ${process.platform} (${process.arch})`,
-  ].join('\n');
-}
 
 export const askPlugin: AvaPlugin = {
   name: 'ask',
