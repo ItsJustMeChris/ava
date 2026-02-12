@@ -8,6 +8,7 @@ import { ideaPlugin } from './src/plugins/idea.ts';
 import { askPlugin } from './src/plugins/ask.ts';
 import { chatPlugin } from './src/plugins/chat/index.ts';
 import { randomPlugin } from './src/plugins/random/index.ts';
+import { orthodoxyPlugin } from './src/plugins/orthodoxy/index.ts';
 
 const registry = new PluginRegistry();
 registry.register(todoPlugin);
@@ -16,5 +17,6 @@ registry.register(ideaPlugin);
 registry.register(askPlugin);
 registry.register(chatPlugin);
 registry.register(randomPlugin);
+registry.register(orthodoxyPlugin);
 
 await runCli(registry, process.argv.slice(2));

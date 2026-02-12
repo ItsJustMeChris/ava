@@ -350,3 +350,48 @@ describe('chat command integration', () => {
     expect(stderr).toContain('Error');
   });
 });
+
+describe('orthodoxy command integration', () => {
+  test('shows snapshot with no subcommand', async () => {
+    const { stdout, exitCode } = await runCli(['orthodoxy'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('Orthodox Day');
+    expect(stdout).toContain('2026');
+  });
+
+  test('shows fasting info', async () => {
+    const { stdout, exitCode } = await runCli(['orthodoxy', 'fast'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("Today's Fast");
+  });
+
+  test('shows saints list', async () => {
+    const { stdout, exitCode } = await runCli(['orthodoxy', 'saints'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('Saints & Feasts');
+  });
+
+  test('shows scripture readings', async () => {
+    const { stdout, exitCode } = await runCli(['orthodoxy', 'readings'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('Scripture Readings');
+  });
+
+  test('shows feasts and celebrations', async () => {
+    const { stdout, exitCode } = await runCli(['orthodoxy', 'feasts'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('Feasts & Celebrations');
+  });
+
+  test('errors on unknown subcommand', async () => {
+    const { stderr, exitCode } = await runCli(['orthodoxy', 'bogus'], makeDataDir());
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('Unknown orthodoxy subcommand');
+  });
+
+  test('shows orthodoxy in help output', async () => {
+    const { stdout, exitCode } = await runCli(['help'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('orthodoxy');
+  });
+});
