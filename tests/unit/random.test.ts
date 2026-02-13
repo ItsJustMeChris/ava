@@ -25,7 +25,7 @@ describe('randomPlugin structure', () => {
     expect(randomPlugin.description).toBe('Generate random values');
     expect(randomPlugin.commands).toHaveLength(1);
     expect(randomPlugin.commands[0]?.name).toBe('random');
-    expect(randomPlugin.summary).toBeUndefined();
+    expect(randomPlugin.widget).toBeUndefined();
   });
 });
 

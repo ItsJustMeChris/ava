@@ -3,6 +3,8 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createJournalPlugin } from '../../src/sdk/journal.ts';
 
+const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+
 const SCRATCHPAD = '/private/tmp/claude-501/ava-journal-tests';
 let dataDir: string;
 
@@ -239,7 +241,7 @@ describe('createJournalPlugin', () => {
     }
   });
 
-  test('summary returns correct structure with no entries', async () => {
+  test('widget returns null with no entries', async () => {
     const plugin = createJournalPlugin({
       name: 'note',
       plural: 'notes',
@@ -248,15 +250,11 @@ describe('createJournalPlugin', () => {
       dataDir,
     });
 
-    if (!plugin.summary) throw new Error('Missing summary hook');
-    const result = await plugin.summary();
-
-    expect(result.title).toBe('Notes');
-    expect(result.count).toBe(0);
-    expect(result.entries).toHaveLength(0);
+    const result = await plugin.widget?.();
+    expect(result).toBeNull();
   });
 
-  test('summary returns most recent 3 entries in reverse order', async () => {
+  test('widget returns lines with title and most recent 3 entries', async () => {
     const plugin = createJournalPlugin({
       name: 'note',
       plural: 'notes',
@@ -280,17 +278,19 @@ describe('createJournalPlugin', () => {
       console.log = originalLog;
     }
 
-    if (!plugin.summary) throw new Error('Missing summary hook');
-    const result = await plugin.summary();
+    const result = await plugin.widget?.();
+    expect(result).not.toBeNull();
+    expect(result?.lines).toHaveLength(4);
 
-    expect(result.count).toBe(4);
-    expect(result.entries).toHaveLength(3);
-    expect(result.entries[0]?.text).toBe('fourth');
-    expect(result.entries[1]?.text).toBe('third');
-    expect(result.entries[2]?.text).toBe('second');
+    const stripped = result?.lines.join('\n').replace(ANSI_RE, '') ?? '';
+    expect(stripped).toContain('Notes (4)');
+    expect(stripped).toContain('fourth');
+    expect(stripped).toContain('third');
+    expect(stripped).toContain('second');
+    expect(stripped).not.toContain('first');
   });
 
-  test('summary entries include createdAt timestamps', async () => {
+  test('widget lines include relative timestamps', async () => {
     const plugin = createJournalPlugin({
       name: 'note',
       plural: 'notes',
@@ -311,11 +311,12 @@ describe('createJournalPlugin', () => {
       console.log = originalLog;
     }
 
-    if (!plugin.summary) throw new Error('Missing summary hook');
-    const result = await plugin.summary();
+    const result = await plugin.widget?.();
+    expect(result).not.toBeNull();
+    expect(result?.lines).toHaveLength(2);
 
-    expect(result.entries).toHaveLength(1);
-    expect(result.entries[0]?.createdAt).toBeDefined();
-    expect(() => new Date(result.entries[0]?.createdAt ?? '')).not.toThrow();
+    const stripped = result?.lines.join('\n').replace(ANSI_RE, '') ?? '';
+    expect(stripped).toContain('test entry');
+    expect(stripped).toContain('just now');
   });
 });

@@ -11,7 +11,7 @@ describe('chatPlugin', () => {
     expect(chatPlugin.name).toBe('chat');
     expect(chatPlugin.description).toBe('Interactive multi-turn chat');
     expect(chatPlugin.commands).toHaveLength(2);
-    expect(chatPlugin.summary).toBeDefined();
+    expect(chatPlugin.widget).toBeDefined();
   });
 
   test('chat command has correct metadata', () => {

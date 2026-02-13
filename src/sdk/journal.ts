@@ -1,4 +1,4 @@
-import type { AvaPlugin, Entry, JournalConfig, PluginSummary } from './types.ts';
+import type { AvaPlugin, DashboardWidget, Entry, JournalConfig } from './types.ts';
 import { Storage } from './storage.ts';
 import { ANSI, colorize, formatEntryLine, formatRelativeTime } from './format.ts';
 
@@ -47,17 +47,21 @@ export function createJournalPlugin(config: JournalConfig): AvaPlugin {
 
   const MAX_SUMMARY_ENTRIES = 3;
 
+  const title = config.plural.charAt(0).toUpperCase() + config.plural.slice(1);
+
   return {
     name: config.name,
     description: config.description,
-    async summary(): Promise<PluginSummary> {
+    async widget(): Promise<DashboardWidget | null> {
       const entries = await storage.loadAll();
+      if (entries.length === 0) return null;
+
       const recent = entries.slice(-MAX_SUMMARY_ENTRIES).reverse();
-      return {
-        title: config.plural.charAt(0).toUpperCase() + config.plural.slice(1),
-        count: entries.length,
-        entries: recent.map((e) => ({ text: e.text, createdAt: e.createdAt })),
-      };
+      const lines: string[] = [
+        colorize(`  ${title} (${String(entries.length)}):`, ANSI.yellow),
+        ...recent.map((e, i) => formatEntryLine(i, e.text, formatRelativeTime(e.createdAt))),
+      ];
+      return { lines };
     },
     commands: [
       {

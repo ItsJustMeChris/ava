@@ -1,4 +1,4 @@
-import type { AvaPlugin, PluginSummary } from '../../sdk/types.ts';
+import type { AvaPlugin, DashboardWidget } from '../../sdk/types.ts';
 import { Storage } from '../../sdk/storage.ts';
 import { ANSI, colorize, formatEntryLine, formatRelativeTime } from '../../sdk/format.ts';
 import { buildSystemPrompt } from '../../sdk/system-prompt.ts';
@@ -45,14 +45,16 @@ async function handleRemove(args: readonly string[]): Promise<void> {
 export const chatPlugin: AvaPlugin = {
   name: 'chat',
   description: 'Interactive multi-turn chat',
-  async summary(): Promise<PluginSummary> {
+  async widget(): Promise<DashboardWidget | null> {
     const threads = await storage.loadAll();
+    if (threads.length === 0) return null;
+
     const recent = threads.slice(-MAX_SUMMARY_ENTRIES).reverse();
-    return {
-      title: 'Chats',
-      count: threads.length,
-      entries: recent.map((t) => ({ text: t.title, createdAt: t.updatedAt })),
-    };
+    const lines: string[] = [
+      colorize(`  Chats (${String(threads.length)}):`, ANSI.yellow),
+      ...recent.map((t, i) => formatEntryLine(i, t.title, formatRelativeTime(t.updatedAt))),
+    ];
+    return { lines };
   },
   commands: [
     {

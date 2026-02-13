@@ -17,13 +17,6 @@ export interface AvaCommand {
   readonly execute: (args: readonly string[]) => Promise<void>;
 }
 
-/** Summary data a plugin contributes to the dashboard. */
-export interface PluginSummary {
-  readonly title: string;
-  readonly count: number;
-  readonly entries: readonly { readonly text: string; readonly createdAt: string }[];
-}
-
 /** A compact widget a plugin contributes to the dashboard. */
 export interface DashboardWidget {
   readonly lines: readonly string[];
@@ -34,7 +27,6 @@ export interface AvaPlugin {
   readonly name: string;
   readonly description: string;
   readonly commands: readonly AvaCommand[];
-  readonly summary?: () => Promise<PluginSummary>;
   readonly widget?: () => Promise<DashboardWidget | null>;
 }
 

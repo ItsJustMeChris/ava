@@ -12,7 +12,7 @@ describe('askPlugin', () => {
     expect(askPlugin.commands).toHaveLength(1);
     expect(askPlugin.commands[0]?.name).toBe('ask');
     expect(askPlugin.commands[0]?.usage).toBe('ask <prompt>');
-    expect(askPlugin.summary).toBeUndefined();
+    expect(askPlugin.widget).toBeUndefined();
   });
 
   test('sets exitCode 1 on empty prompt', async () => {
