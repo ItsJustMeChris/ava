@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createJournalPlugin } from '../../src/sdk/journal.ts';
+import { createDashboardPlugin } from '../../src/sdk/dashboard.ts';
 
 const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 
@@ -21,9 +21,9 @@ afterEach(async () => {
   }
 });
 
-describe('createJournalPlugin', () => {
+describe('createDashboardPlugin', () => {
   test('creates plugin with correct name and two commands', () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -38,7 +38,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('add command persists an entry and prints confirmation', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -63,7 +63,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('add command sets exitCode 1 when no text provided', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -85,7 +85,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('list command shows empty message when no entries', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -110,7 +110,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('list command displays entries after adding', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -143,7 +143,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('remove subcommand removes entry by 1-based index', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -176,7 +176,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('remove subcommand sets exitCode 1 for missing index', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -198,7 +198,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('remove subcommand sets exitCode 1 for invalid index', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -220,7 +220,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('remove subcommand sets exitCode 1 for out-of-range index', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -242,7 +242,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('widget returns null with no entries', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -255,7 +255,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('widget returns lines with title and most recent 3 entries', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',
@@ -291,7 +291,7 @@ describe('createJournalPlugin', () => {
   });
 
   test('widget lines include relative timestamps', async () => {
-    const plugin = createJournalPlugin({
+    const plugin = createDashboardPlugin({
       name: 'note',
       plural: 'notes',
       description: 'Take notes',

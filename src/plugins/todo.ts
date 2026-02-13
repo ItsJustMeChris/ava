@@ -1,6 +1,6 @@
-import { createJournalPlugin } from '../sdk/index.ts';
+import { createDashboardPlugin } from '../sdk/index.ts';
 
-export const todoPlugin = createJournalPlugin({
+export const todoPlugin = createDashboardPlugin({
   name: 'todo',
   plural: 'todos',
   description: 'Track things you need to do',

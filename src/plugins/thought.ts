@@ -1,6 +1,6 @@
-import { createJournalPlugin } from '../sdk/index.ts';
+import { createDashboardPlugin } from '../sdk/index.ts';
 
-export const thoughtPlugin = createJournalPlugin({
+export const thoughtPlugin = createDashboardPlugin({
   name: 'thought',
   plural: 'thoughts',
   description: 'Capture fleeting thoughts',

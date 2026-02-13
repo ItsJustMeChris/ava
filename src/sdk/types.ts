@@ -30,8 +30,8 @@ export interface AvaPlugin {
   readonly widget?: () => Promise<DashboardWidget | null>;
 }
 
-/** Configuration for the journal plugin factory. */
-export interface JournalConfig {
+/** Configuration for the dashboard plugin factory. */
+export interface DashboardPluginConfig {
   readonly name: string;
   readonly plural: string;
   readonly description: string;

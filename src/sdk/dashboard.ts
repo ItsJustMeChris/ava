@@ -1,10 +1,10 @@
-import type { AvaPlugin, DashboardWidget, Entry, JournalConfig } from './types.ts';
+import type { AvaPlugin, DashboardPluginConfig, DashboardWidget, Entry } from './types.ts';
 import { Storage } from './storage.ts';
 import { ANSI, colorize, formatEntryLine, formatRelativeTime } from './format.ts';
 
 async function handleRemove(
   storage: Storage<Entry>,
-  config: JournalConfig,
+  config: DashboardPluginConfig,
   args: readonly string[],
 ): Promise<void> {
   const raw = args[0];
@@ -39,10 +39,10 @@ async function handleRemove(
 }
 
 /**
- * Factory that creates a journal-style plugin with add (singular) and list (plural) commands.
- * @param config - Journal plugin configuration.
+ * Factory that creates a dashboard plugin with add (singular) and list (plural) commands.
+ * @param config - Dashboard plugin configuration.
  */
-export function createJournalPlugin(config: JournalConfig): AvaPlugin {
+export function createDashboardPlugin(config: DashboardPluginConfig): AvaPlugin {
   const storage = new Storage<Entry>(config.plural, config.dataDir);
 
   const MAX_SUMMARY_ENTRIES = 3;
