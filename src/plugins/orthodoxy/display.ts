@@ -1,6 +1,7 @@
 /** Rendering functions for Orthodox liturgical display. */
 
 import { ANSI, colorize } from '../../sdk/format.ts';
+import type { DashboardWidget } from '../../sdk/types.ts';
 import type { OrthodoxDay } from './types.ts';
 
 const CROSS = '\u2626';
@@ -113,4 +114,16 @@ export function renderFeasts(day: OrthodoxDay): void {
   console.log(`\n  ${colorize(`${CROSS} Feasts & Celebrations`, ANSI.bold)} ${colorize(`\u2014 ${shortDate}`, ANSI.dim)}\n`);
   console.log(`  ${day.summary}`);
   console.log();
+}
+
+/** Builds a compact dashboard widget for today's liturgical data. */
+export function renderDashboardWidget(day: OrthodoxDay): DashboardWidget {
+  const displayDate = formatDisplayDate(day.date);
+  const header = `  ${colorize(`${CROSS} Orthodoxy`, ANSI.bold)} ${colorize(`\u2014 ${displayDate}`, ANSI.dim)}`;
+  const summary = `    ${day.summary}`;
+  const fasting = day.fasting
+    ? `    ${colorize('Fasting:', ANSI.bold)} ${day.fasting}`
+    : `    ${colorize('Fasting:', ANSI.bold)} No Fast`;
+
+  return { lines: [header, summary, fasting] };
 }

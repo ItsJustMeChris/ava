@@ -24,12 +24,18 @@ export interface PluginSummary {
   readonly entries: readonly { readonly text: string; readonly createdAt: string }[];
 }
 
+/** A compact widget a plugin contributes to the dashboard. */
+export interface DashboardWidget {
+  readonly lines: readonly string[];
+}
+
 /** A plugin that provides one or more commands to the CLI. */
 export interface AvaPlugin {
   readonly name: string;
   readonly description: string;
   readonly commands: readonly AvaCommand[];
   readonly summary?: () => Promise<PluginSummary>;
+  readonly widget?: () => Promise<DashboardWidget | null>;
 }
 
 /** Configuration for the journal plugin factory. */

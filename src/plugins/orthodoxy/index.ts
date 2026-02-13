@@ -3,7 +3,7 @@
 import type { AvaPlugin } from '../../sdk/types.ts';
 import { ANSI, colorize } from '../../sdk/format.ts';
 import { parseIcsFile, findToday } from './parser.ts';
-import { renderSnapshot, renderFasting, renderSaints, renderReadings, renderFeasts } from './display.ts';
+import { renderSnapshot, renderFasting, renderSaints, renderReadings, renderFeasts, renderDashboardWidget } from './display.ts';
 import type { OrthodoxDay } from './types.ts';
 
 interface Subcommand {
@@ -56,4 +56,14 @@ export const orthodoxyPlugin: AvaPlugin = {
       },
     },
   ],
+  async widget() {
+    const days = await parseIcsFile();
+    const today = findToday(days);
+
+    if (!today) {
+      return null;
+    }
+
+    return renderDashboardWidget(today);
+  },
 };

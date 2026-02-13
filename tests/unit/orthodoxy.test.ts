@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { parseIcsFile, findToday } from '../../src/plugins/orthodoxy/parser.ts';
-import { renderSnapshot, renderFasting, renderSaints, renderReadings, renderFeasts } from '../../src/plugins/orthodoxy/display.ts';
+import { renderSnapshot, renderFasting, renderSaints, renderReadings, renderFeasts, renderDashboardWidget } from '../../src/plugins/orthodoxy/display.ts';
 import type { OrthodoxDay } from '../../src/plugins/orthodoxy/types.ts';
 
 const ICS_PATH = `${import.meta.dirname}/../../planner2025-en.ics`;
+const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 
 describe('ICS parser', () => {
   test('parses the ICS file without errors', async () => {
@@ -201,11 +202,69 @@ describe('display functions', () => {
   });
 });
 
+describe('renderDashboardWidget', () => {
+  const mockDay: OrthodoxDay = {
+    date: '2026-02-13',
+    summary: 'Sunday of the Prodigal Son',
+    saints: ['Martinian of Caesarea'],
+    fasting: 'Fast Day (Wine and Oil Allowed)',
+    readings: [],
+  };
+
+  test('returns three lines: header, summary, fasting', () => {
+    const widget = renderDashboardWidget(mockDay);
+    expect(widget.lines).toHaveLength(3);
+  });
+
+  test('header contains cross and formatted date', () => {
+    const widget = renderDashboardWidget(mockDay);
+    expect(widget.lines[0]).toContain('\u2626');
+    expect(widget.lines[0]).toContain('Orthodoxy');
+    expect(widget.lines[0]).toContain('2026');
+  });
+
+  test('includes feast summary', () => {
+    const widget = renderDashboardWidget(mockDay);
+    const line = widget.lines.at(1) ?? '';
+    expect(line).toContain('Sunday of the Prodigal Son');
+  });
+
+  test('includes fasting rule when present', () => {
+    const widget = renderDashboardWidget(mockDay);
+    const line = widget.lines.at(2) ?? '';
+    const stripped = line.replace(ANSI_RE, '');
+    expect(stripped).toContain('Fast Day (Wine and Oil Allowed)');
+  });
+
+  test('shows "No Fast" when fasting is null', () => {
+    const noFastDay: OrthodoxDay = { ...mockDay, fasting: null };
+    const widget = renderDashboardWidget(noFastDay);
+    const line = widget.lines.at(2) ?? '';
+    const stripped = line.replace(ANSI_RE, '');
+    expect(stripped).toContain('No Fast');
+  });
+});
+
 describe('plugin subcommand dispatch', () => {
   test('orthodoxyPlugin exports correct structure', async () => {
     const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.ts');
     expect(orthodoxyPlugin.name).toBe('orthodoxy');
     expect(orthodoxyPlugin.commands).toHaveLength(1);
     expect(orthodoxyPlugin.commands[0]!.name).toBe('orthodoxy');
+  });
+
+  test('orthodoxyPlugin has a widget hook', async () => {
+    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.ts');
+    expect(orthodoxyPlugin.widget).toBeFunction();
+  });
+
+  test('widget hook returns a DashboardWidget with lines', async () => {
+    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.ts');
+    expect(orthodoxyPlugin.widget).toBeDefined();
+    const result = await orthodoxyPlugin.widget?.();
+    if (result !== null && result !== undefined) {
+      expect(result.lines).toBeInstanceOf(Array);
+      expect(result.lines.length).toBeGreaterThan(0);
+    }
   });
 });

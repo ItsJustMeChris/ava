@@ -36,13 +36,11 @@ afterEach(async () => {
 });
 
 describe('CLI integration', () => {
-  test('shows welcome dashboard with no arguments and no entries', async () => {
+  test('shows dashboard with orthodoxy widget when no journal entries exist', async () => {
     const { stdout, exitCode } = await runCli([], makeDataDir());
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('Welcome to Ava');
-    expect(stdout).toContain('todo');
-    expect(stdout).toContain('thought');
-    expect(stdout).toContain('idea');
+    expect(stdout).toContain('Dashboard');
+    expect(stdout).toContain('Orthodoxy');
   });
 
   test('shows dashboard with entries when no arguments', async () => {
@@ -348,6 +346,22 @@ describe('chat command integration', () => {
     const { stderr, exitCode } = await runCli(['chats', 'remove', '5'], makeDataDir());
     expect(exitCode).toBe(1);
     expect(stderr).toContain('Error');
+  });
+});
+
+describe('orthodoxy dashboard widget', () => {
+  test('dashboard includes orthodoxy widget', async () => {
+    const { stdout, exitCode } = await runCli([], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('\u2626');
+    expect(stdout).toContain('Orthodoxy');
+    expect(stdout).toContain('Fasting');
+  });
+
+  test('dashboard with orthodoxy widget suppresses welcome message', async () => {
+    const { stdout, exitCode } = await runCli([], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stdout).not.toContain('Welcome to Ava');
   });
 });
 

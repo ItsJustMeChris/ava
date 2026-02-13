@@ -22,14 +22,24 @@ function showHelp(registry: PluginRegistry): void {
 /** Displays a dashboard overview of all plugin summaries. */
 async function showDashboard(registry: PluginRegistry): Promise<void> {
   const plugins = registry.list();
+
+  const widgetHooks = plugins
+    .map((p) => p.widget)
+    .filter((w): w is NonNullable<typeof w> => w !== undefined);
   const summaryHooks = plugins
     .map((p) => p.summary)
     .filter((s): s is NonNullable<typeof s> => s !== undefined);
-  const summaries = await Promise.all(summaryHooks.map((s) => s()));
 
+  const [widgets, summaries] = await Promise.all([
+    Promise.all(widgetHooks.map((w) => w())),
+    Promise.all(summaryHooks.map((s) => s())),
+  ]);
+
+  const activeWidgets = widgets.filter((w): w is NonNullable<typeof w> => w !== null);
   const totalCount = summaries.reduce((sum, s) => sum + s.count, 0);
+  const hasContent = activeWidgets.length > 0 || totalCount > 0;
 
-  if (totalCount === 0) {
+  if (!hasContent) {
     console.log(colorize('\n  Welcome to Ava!', ANSI.bold));
     console.log(colorize('  Get started by adding your first entry:\n', ANSI.dim));
     printCommands(registry);
@@ -37,6 +47,13 @@ async function showDashboard(registry: PluginRegistry): Promise<void> {
   }
 
   console.log(colorize('\n  Ava Dashboard\n', ANSI.bold));
+
+  for (const widget of activeWidgets) {
+    for (const line of widget.lines) {
+      console.log(line);
+    }
+    console.log();
+  }
 
   for (const summary of summaries) {
     if (summary.count === 0) continue;
