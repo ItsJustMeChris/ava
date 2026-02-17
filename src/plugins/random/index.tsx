@@ -1,7 +1,6 @@
-/** Random value generator plugin for Ava CLI. */
-
+import { Box, Text } from 'ink';
+import type { ReactNode } from 'react';
 import type { AvaPlugin } from '../../sdk/types.ts';
-import { ANSI, colorize, rgbFg } from '../../sdk/format.ts';
 import {
   generateBytes,
   generateColor,
@@ -17,10 +16,9 @@ interface Subcommand {
   readonly name: string;
   readonly usage: string;
   readonly description: string;
-  readonly run: (args: readonly string[]) => void;
+  readonly run: (args: readonly string[]) => ReactNode;
 }
 
-/** Parses a string as a positive integer, returning `undefined` on failure. */
 function parsePositiveInt(value: string): number | undefined {
   const num = Number(value);
   if (!Number.isInteger(num) || num <= 0) {
@@ -29,13 +27,16 @@ function parsePositiveInt(value: string): number | undefined {
   return num;
 }
 
-/** Parses a string as an integer (including zero and negatives), returning `undefined` on failure. */
 function parseIntArg(value: string): number | undefined {
   const num = Number(value);
   if (!Number.isInteger(num)) {
     return undefined;
   }
   return num;
+}
+
+function ErrorText({ message }: { readonly message: string }) {
+  return <Text color="red">{message}</Text>;
 }
 
 const SUBCOMMANDS: readonly Subcommand[] = [
@@ -46,11 +47,10 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     run(args) {
       const len = args[0] !== undefined ? parsePositiveInt(args[0]) : 16;
       if (len === undefined) {
-        console.error(colorize('Error: Length must be a positive integer.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: Length must be a positive integer." />;
       }
-      console.log(colorize(generateBytes(len), ANSI.cyan));
+      return <Text color="cyan">{generateBytes(len)}</Text>;
     },
   },
   {
@@ -60,11 +60,10 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     run(args) {
       const count = args[0] !== undefined ? parsePositiveInt(args[0]) : 4;
       if (count === undefined) {
-        console.error(colorize('Error: Count must be a positive integer.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: Count must be a positive integer." />;
       }
-      console.log(colorize(generateWords(count), ANSI.cyan));
+      return <Text color="cyan">{generateWords(count)}</Text>;
     },
   },
   {
@@ -74,11 +73,10 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     run(args) {
       const len = args[0] !== undefined ? parsePositiveInt(args[0]) : 32;
       if (len === undefined) {
-        console.error(colorize('Error: Length must be a positive integer.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: Length must be a positive integer." />;
       }
-      console.log(colorize(generateString(len), ANSI.cyan));
+      return <Text color="cyan">{generateString(len)}</Text>;
     },
   },
   {
@@ -88,11 +86,10 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     run(args) {
       const count = args[0] !== undefined ? parsePositiveInt(args[0]) : 2;
       if (count === undefined) {
-        console.error(colorize('Error: Count must be a positive integer.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: Count must be a positive integer." />;
       }
-      console.log(colorize(generatePlayful(count), ANSI.cyan));
+      return <Text color="cyan">{generatePlayful(count)}</Text>;
     },
   },
   {
@@ -100,7 +97,7 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     usage: 'random uuid',
     description: 'UUID v4',
     run() {
-      console.log(colorize(generateUuid(), ANSI.cyan));
+      return <Text color="cyan">{generateUuid()}</Text>;
     },
   },
   {
@@ -111,16 +108,14 @@ const SUBCOMMANDS: readonly Subcommand[] = [
       const min = args[0] !== undefined ? parseIntArg(args[0]) : 0;
       const max = args[1] !== undefined ? parseIntArg(args[1]) : 100;
       if (min === undefined || max === undefined) {
-        console.error(colorize('Error: min and max must be integers.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: min and max must be integers." />;
       }
       if (min >= max) {
-        console.error(colorize('Error: min must be less than max.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: min must be less than max." />;
       }
-      console.log(colorize(generateInt(min, max), ANSI.cyan));
+      return <Text color="cyan">{generateInt(min, max)}</Text>;
     },
   },
   {
@@ -130,11 +125,10 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     run(args) {
       const len = args[0] !== undefined ? parsePositiveInt(args[0]) : 32;
       if (len === undefined) {
-        console.error(colorize('Error: Length must be a positive integer.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: Length must be a positive integer." />;
       }
-      console.log(colorize(generateHex(len), ANSI.cyan));
+      return <Text color="cyan">{generateHex(len)}</Text>;
     },
   },
   {
@@ -144,27 +138,31 @@ const SUBCOMMANDS: readonly Subcommand[] = [
     run(args) {
       const count = args[0] !== undefined ? parsePositiveInt(args[0]) : 1;
       if (count === undefined) {
-        console.error(colorize('Error: Count must be a positive integer.', ANSI.red));
         process.exitCode = 1;
-        return;
+        return <ErrorText message="Error: Count must be a positive integer." />;
       }
-      for (let i = 0; i < count; i++) {
-        const hex = generateColor();
-        const swatch = colorize('█████', rgbFg(hex));
-        console.log(`${swatch} ${colorize(hex, rgbFg(hex))}`);
-      }
+      const colors = Array.from({ length: count }, () => generateColor());
+      return (
+        <Box flexDirection="column">
+          {colors.map((hex, i) => (
+            <Text key={i}><Text color={hex}>█████</Text> <Text color={hex}>{hex}</Text></Text>
+          ))}
+        </Box>
+      );
     },
   },
 ];
 
-/** Prints help listing all random subcommands. */
-function printRandomHelp(): void {
-  console.log(colorize('\n  ava random', ANSI.bold) + colorize(' - Generate random values\n', ANSI.dim));
-  for (const sub of SUBCOMMANDS) {
-    const name = colorize(sub.usage, ANSI.cyan);
-    console.log(`    ${name}  ${colorize(sub.description, ANSI.dim)}`);
-  }
-  console.log();
+function RandomHelp() {
+  return (
+    <Box flexDirection="column">
+      <Text>{'\n'}  <Text bold>ava random</Text><Text dimColor> - Generate random values</Text>{'\n'}</Text>
+      {SUBCOMMANDS.map((sub) => (
+        <Text key={sub.name}>    <Text color="cyan">{sub.usage}</Text>  <Text dimColor>{sub.description}</Text></Text>
+      ))}
+      <Text>{''}</Text>
+    </Box>
+  );
 }
 
 export const randomPlugin: AvaPlugin = {
@@ -175,24 +173,21 @@ export const randomPlugin: AvaPlugin = {
       name: 'random',
       description: 'Generate random values (bytes, words, uuid, etc.)',
       usage: 'random <type> [options]',
-      execute(args) {
+      execute(args): Promise<ReactNode> {
         const subName = args[0];
 
         if (subName === undefined) {
-          printRandomHelp();
-          return Promise.resolve();
+          return Promise.resolve(<RandomHelp />);
         }
 
         const sub = SUBCOMMANDS.find((s) => s.name === subName);
 
         if (!sub) {
-          console.error(colorize(`Unknown random type: "${subName}". Run "ava random" for usage.`, ANSI.red));
           process.exitCode = 1;
-          return Promise.resolve();
+          return Promise.resolve(<Text color="red">Unknown random type: &quot;{subName}&quot;. Run &quot;ava random&quot; for usage.</Text>);
         }
 
-        sub.run(args.slice(1));
-        return Promise.resolve();
+        return Promise.resolve(sub.run(args.slice(1)));
       },
     },
   ],

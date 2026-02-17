@@ -1,5 +1,7 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
-import { randomPlugin } from '../../src/plugins/random/index.ts';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { render } from 'ink-testing-library';
+import { randomPlugin } from '../../src/plugins/random/index.tsx';
+import { OneShotRenderer } from '../../src/components/OneShotRenderer.tsx';
 import {
   generateBytes,
   generateColor,
@@ -11,12 +13,26 @@ import {
   generateWords,
 } from '../../src/plugins/random/generators.ts';
 
+const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+
+function stripAnsi(text: string): string {
+  return text.replace(ANSI_RE, '');
+}
+
+function renderResult(result: unknown): string {
+  if (!result) return '';
+  const instance = render(<OneShotRenderer>{result as React.ReactNode}</OneShotRenderer>);
+  const frame = stripAnsi(instance.lastFrame() ?? '');
+  instance.cleanup();
+  return frame;
+}
+
 beforeEach(() => {
-  process.exitCode = undefined;
+  process.exitCode = 0;
 });
 
 afterEach(() => {
-  process.exitCode = undefined;
+  process.exitCode = 0;
 });
 
 describe('randomPlugin structure', () => {
@@ -25,7 +41,7 @@ describe('randomPlugin structure', () => {
     expect(randomPlugin.description).toBe('Generate random values');
     expect(randomPlugin.commands).toHaveLength(1);
     expect(randomPlugin.commands[0]?.name).toBe('random');
-    expect(randomPlugin.widget).toBeUndefined();
+    expect(randomPlugin.Widget).toBeUndefined();
   });
 });
 
@@ -114,111 +130,58 @@ describe('generators', () => {
 });
 
 describe('random command dispatch', () => {
-  test('prints help with no subcommand', async () => {
-    const logs: string[] = [];
-    const originalLog = console.log;
-    console.log = mock((...args: unknown[]) => {
-      logs.push(args.join(' '));
-    });
-
-    try {
-      const exitCodeBefore = process.exitCode;
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute([]);
-      expect(process.exitCode).toBe(exitCodeBefore);
-      expect(logs.some((line) => line.includes('random'))).toBe(true);
-      expect(logs.some((line) => line.includes('bytes'))).toBe(true);
-      expect(logs.some((line) => line.includes('uuid'))).toBe(true);
-    } finally {
-      console.log = originalLog;
-    }
+  test('returns help with no subcommand', async () => {
+    const exitCodeBefore = process.exitCode;
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    const result = await cmd.execute([]);
+    expect(process.exitCode).toBe(exitCodeBefore);
+    const frame = renderResult(result);
+    expect(frame).toContain('random');
+    expect(frame).toContain('bytes');
+    expect(frame).toContain('uuid');
   });
 
   test('sets exitCode 1 for unknown subcommand', async () => {
-    const originalError = console.error;
-    console.error = mock(() => { /* suppress */ });
-
-    try {
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute(['nonexistent']);
-      expect(process.exitCode).toBe(1);
-    } finally {
-      console.error = originalError;
-    }
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    await cmd.execute(['nonexistent']);
+    expect(process.exitCode).toBe(1);
   });
 
-  test('prints error message for unknown subcommand', async () => {
-    const errors: string[] = [];
-    const originalError = console.error;
-    console.error = mock((...args: unknown[]) => {
-      errors.push(args.join(' '));
-    });
-
-    try {
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute(['nonexistent']);
-      expect(errors.some((line) => line.includes('Unknown random type'))).toBe(true);
-    } finally {
-      console.error = originalError;
-    }
+  test('returns error for unknown subcommand', async () => {
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    const result = await cmd.execute(['nonexistent']);
+    const frame = renderResult(result);
+    expect(frame).toContain('Unknown random type');
   });
 
   test('sets exitCode 1 for invalid numeric arg', async () => {
-    const originalError = console.error;
-    console.error = mock(() => { /* suppress */ });
-
-    try {
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute(['bytes', 'abc']);
-      expect(process.exitCode).toBe(1);
-    } finally {
-      console.error = originalError;
-    }
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    await cmd.execute(['bytes', 'abc']);
+    expect(process.exitCode).toBe(1);
   });
 
   test('sets exitCode 1 for negative length', async () => {
-    const originalError = console.error;
-    console.error = mock(() => { /* suppress */ });
-
-    try {
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute(['string', '-5']);
-      expect(process.exitCode).toBe(1);
-    } finally {
-      console.error = originalError;
-    }
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    await cmd.execute(['string', '-5']);
+    expect(process.exitCode).toBe(1);
   });
 
   test('sets exitCode 1 when int min >= max', async () => {
-    const originalError = console.error;
-    console.error = mock(() => { /* suppress */ });
-
-    try {
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute(['int', '10', '5']);
-      expect(process.exitCode).toBe(1);
-    } finally {
-      console.error = originalError;
-    }
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    await cmd.execute(['int', '10', '5']);
+    expect(process.exitCode).toBe(1);
   });
 
   test('sets exitCode 1 when int min equals max', async () => {
-    const originalError = console.error;
-    console.error = mock(() => { /* suppress */ });
-
-    try {
-      const cmd = randomPlugin.commands[0];
-      if (!cmd) throw new Error('Missing random command');
-      await cmd.execute(['int', '5', '5']);
-      expect(process.exitCode).toBe(1);
-    } finally {
-      console.error = originalError;
-    }
+    const cmd = randomPlugin.commands[0];
+    if (!cmd) throw new Error('Missing random command');
+    await cmd.execute(['int', '5', '5']);
+    expect(process.exitCode).toBe(1);
   });
 });

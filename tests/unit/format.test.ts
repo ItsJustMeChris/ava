@@ -1,12 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ANSI, colorize, formatEntryLine, formatRelativeTime } from '../../src/sdk/format.ts';
-
-describe('colorize', () => {
-  test('wraps text with color and reset codes', () => {
-    const result = colorize('hello', ANSI.red);
-    expect(result).toBe(`\x1b[31mhello\x1b[0m`);
-  });
-});
+import { formatRelativeTime } from '../../src/sdk/format.ts';
 
 describe('formatRelativeTime', () => {
   const now = new Date('2025-01-15T12:00:00.000Z');
@@ -38,19 +31,5 @@ describe('formatRelativeTime', () => {
 
   test('returns "just now" for future timestamps', () => {
     expect(formatRelativeTime('2025-01-15T12:01:00.000Z', now)).toBe('just now');
-  });
-});
-
-describe('formatEntryLine', () => {
-  test('formats an entry with index, text, and time', () => {
-    const result = formatEntryLine(0, 'Buy groceries', '5m ago');
-    expect(result).toContain('1.');
-    expect(result).toContain('Buy groceries');
-    expect(result).toContain('5m ago');
-  });
-
-  test('uses 1-based indexing', () => {
-    const result = formatEntryLine(2, 'test', '1h ago');
-    expect(result).toContain('3.');
   });
 });

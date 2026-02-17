@@ -10,7 +10,7 @@ function makePlugin(name: string, commands: string[]): AvaPlugin {
       name: cmd,
       description: `${cmd} command`,
       usage: cmd,
-      execute: async () => { /* noop */ },
+      execute: () => Promise.resolve(),
     })),
   };
 }

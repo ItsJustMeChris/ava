@@ -1,10 +1,16 @@
 import { describe, expect, test } from 'bun:test';
+import { render } from 'ink-testing-library';
 import { parseIcsFile, findToday } from '../../src/plugins/orthodoxy/parser.ts';
-import { renderSnapshot, renderFasting, renderSaints, renderReadings, renderFeasts, renderDashboardWidget } from '../../src/plugins/orthodoxy/display.ts';
+import { SnapshotView, FastingView, SaintsView, ReadingsView, FeastsView } from '../../src/plugins/orthodoxy/views.tsx';
+import { OrthodoxyWidget } from '../../src/plugins/orthodoxy/OrthodoxyWidget.tsx';
 import type { OrthodoxDay } from '../../src/plugins/orthodoxy/types.ts';
 
 const ICS_PATH = `${import.meta.dirname}/../../planner2025-en.ics`;
 const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+
+function stripAnsi(text: string): string {
+  return text.replace(ANSI_RE, '');
+}
 
 describe('ICS parser', () => {
   test('parses the ICS file without errors', async () => {
@@ -30,15 +36,17 @@ describe('ICS parser', () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept1 = days.find((d) => d.date === '2025-09-01');
     expect(sept1).toBeDefined();
-    expect(sept1!.saints).toContain('Ecclesiastical New Year');
-    expect(sept1!.saints).toContain('Symeon the Stylite');
+    if (!sept1) return;
+    expect(sept1.saints).toContain('Ecclesiastical New Year');
+    expect(sept1.saints).toContain('Symeon the Stylite');
   });
 
   test('parses escaped commas in saint names', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept1 = days.find((d) => d.date === '2025-09-01');
     expect(sept1).toBeDefined();
-    const hasMiasenae = sept1!.saints.some((s) => s.includes('Miasenae'));
+    if (!sept1) return;
+    const hasMiasenae = sept1.saints.some((s) => s.includes('Miasenae'));
     expect(hasMiasenae).toBe(true);
   });
 
@@ -46,80 +54,93 @@ describe('ICS parser', () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept3 = days.find((d) => d.date === '2025-09-03');
     expect(sept3).toBeDefined();
-    expect(sept3!.fasting).toBe('Strict Fast');
+    if (!sept3) return;
+    expect(sept3.fasting).toBe('Strict Fast');
   });
 
   test('parses Fast Day (Wine and Oil Allowed)', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept14 = days.find((d) => d.date === '2025-09-14');
     expect(sept14).toBeDefined();
-    expect(sept14!.fasting).toBe('Fast Day (Wine and Oil Allowed)');
+    if (!sept14) return;
+    expect(sept14.fasting).toBe('Fast Day (Wine and Oil Allowed)');
   });
 
   test('parses Fast Day (Fish Allowed)', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const nov14 = days.find((d) => d.date === '2025-11-14');
     expect(nov14).toBeDefined();
-    expect(nov14!.fasting).toBe('Fast Day (Fish Allowed)');
+    if (!nov14) return;
+    expect(nov14.fasting).toBe('Fast Day (Fish Allowed)');
   });
 
   test('parses Fast Free', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const dec25 = days.find((d) => d.date === '2025-12-25');
     expect(dec25).toBeDefined();
-    expect(dec25!.fasting).toBe('Fast Free');
+    if (!dec25) return;
+    expect(dec25.fasting).toBe('Fast Free');
   });
 
   test('returns null fasting when none specified', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept2 = days.find((d) => d.date === '2025-09-02');
     expect(sept2).toBeDefined();
-    expect(sept2!.fasting).toBeNull();
+    if (!sept2) return;
+    expect(sept2.fasting).toBeNull();
   });
 
   test('parses epistle and gospel readings', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept1 = days.find((d) => d.date === '2025-09-01');
     expect(sept1).toBeDefined();
-    expect(sept1!.readings.length).toBeGreaterThanOrEqual(2);
+    if (!sept1) return;
+    expect(sept1.readings.length).toBeGreaterThanOrEqual(2);
 
-    const epistle = sept1!.readings.find((r) => r.type === 'Epistle Reading');
+    const epistle = sept1.readings.find((r) => r.type === 'Epistle Reading');
     expect(epistle).toBeDefined();
-    expect(epistle!.reference).toContain('Timothy');
-    expect(epistle!.text.length).toBeGreaterThan(0);
+    if (!epistle) return;
+    expect(epistle.reference).toContain('Timothy');
+    expect(epistle.text.length).toBeGreaterThan(0);
 
-    const gospel = sept1!.readings.find((r) => r.type === 'Gospel Reading');
+    const gospel = sept1.readings.find((r) => r.type === 'Gospel Reading');
     expect(gospel).toBeDefined();
-    expect(gospel!.reference).toContain('Luke');
-    expect(gospel!.text.length).toBeGreaterThan(0);
+    if (!gospel) return;
+    expect(gospel.reference).toContain('Luke');
+    expect(gospel.text.length).toBeGreaterThan(0);
   });
 
   test('parses matins gospel reading', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept7 = days.find((d) => d.date === '2025-09-07');
     expect(sept7).toBeDefined();
+    if (!sept7) return;
 
-    const matins = sept7!.readings.find((r) => r.type === 'Matins Gospel Reading');
+    const matins = sept7.readings.find((r) => r.type === 'Matins Gospel Reading');
     expect(matins).toBeDefined();
-    expect(matins!.reference).toContain('Mark');
+    if (!matins) return;
+    expect(matins.reference).toContain('Mark');
   });
 
   test('unescapes quotes in reading text', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const sept1 = days.find((d) => d.date === '2025-09-01');
     expect(sept1).toBeDefined();
+    if (!sept1) return;
 
-    const gospel = sept1!.readings.find((r) => r.type === 'Gospel Reading');
+    const gospel = sept1.readings.find((r) => r.type === 'Gospel Reading');
     expect(gospel).toBeDefined();
-    expect(gospel!.text).toContain('"The Spirit of the Lord');
+    if (!gospel) return;
+    expect(gospel.text).toContain('"The Spirit of the Lord');
   });
 
   test('unescapes commas in summary', async () => {
     const days = await parseIcsFile(ICS_PATH);
     const dec25 = days.find((d) => d.date === '2025-12-25');
     expect(dec25).toBeDefined();
-    expect(dec25!.summary).toContain('Jesus Christ');
-    expect(dec25!.summary).not.toContain('\\,');
+    if (!dec25) return;
+    expect(dec25.summary).toContain('Jesus Christ');
+    expect(dec25.summary).not.toContain('\\,');
   });
 });
 
@@ -128,7 +149,8 @@ describe('findToday', () => {
     const days = await parseIcsFile(ICS_PATH);
     const result = findToday(days, new Date('2025-09-01T12:00:00'));
     expect(result).toBeDefined();
-    expect(result!.date).toBe('2025-09-01');
+    if (!result) return;
+    expect(result.date).toBe('2025-09-01');
   });
 
   test('returns undefined for a date not in the file', async () => {
@@ -138,7 +160,7 @@ describe('findToday', () => {
   });
 });
 
-describe('display functions', () => {
+describe('view components', () => {
   const mockDay: OrthodoxDay = {
     date: '2026-02-12',
     summary: 'Meletius, Archbishop of Antioch',
@@ -167,104 +189,92 @@ describe('display functions', () => {
     fasting: 'Strict Fast',
   };
 
-  test('renderSnapshot outputs without throwing', () => {
-    expect(() => { renderSnapshot(mockDay); }).not.toThrow();
+  test('SnapshotView renders without error', () => {
+    const instance = render(<SnapshotView day={mockDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('Orthodox Day');
+    expect(frame).toContain('Meletius');
+    instance.cleanup();
   });
 
-  test('renderFasting outputs without throwing', () => {
-    expect(() => { renderFasting(mockDay); }).not.toThrow();
+  test('FastingView renders without error', () => {
+    const instance = render(<FastingView day={mockDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain("Today's Fast");
+    instance.cleanup();
   });
 
-  test('renderFasting outputs fasting description for fast days', () => {
-    expect(() => { renderFasting(mockFastDay); }).not.toThrow();
+  test('FastingView renders fasting description for fast days', () => {
+    const instance = render(<FastingView day={mockFastDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('Strict Fast');
+    instance.cleanup();
   });
 
-  test('renderSaints outputs without throwing', () => {
-    expect(() => { renderSaints(mockDay); }).not.toThrow();
+  test('SaintsView renders without error', () => {
+    const instance = render(<SaintsView day={mockDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('Saints');
+    instance.cleanup();
   });
 
-  test('renderSaints handles empty saints list', () => {
+  test('SaintsView handles empty saints list', () => {
     const emptyDay: OrthodoxDay = { ...mockDay, saints: [] };
-    expect(() => { renderSaints(emptyDay); }).not.toThrow();
+    const instance = render(<SaintsView day={emptyDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('No saints listed');
+    instance.cleanup();
   });
 
-  test('renderReadings outputs without throwing', () => {
-    expect(() => { renderReadings(mockDay); }).not.toThrow();
+  test('ReadingsView renders without error', () => {
+    const instance = render(<ReadingsView day={mockDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('Scripture Readings');
+    instance.cleanup();
   });
 
-  test('renderReadings handles empty readings', () => {
+  test('ReadingsView handles empty readings', () => {
     const emptyDay: OrthodoxDay = { ...mockDay, readings: [] };
-    expect(() => { renderReadings(emptyDay); }).not.toThrow();
+    const instance = render(<ReadingsView day={emptyDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('No readings listed');
+    instance.cleanup();
   });
 
-  test('renderFeasts outputs without throwing', () => {
-    expect(() => { renderFeasts(mockDay); }).not.toThrow();
-  });
-});
-
-describe('renderDashboardWidget', () => {
-  const mockDay: OrthodoxDay = {
-    date: '2026-02-13',
-    summary: 'Sunday of the Prodigal Son',
-    saints: ['Martinian of Caesarea'],
-    fasting: 'Fast Day (Wine and Oil Allowed)',
-    readings: [],
-  };
-
-  test('returns three lines: header, summary, fasting', () => {
-    const widget = renderDashboardWidget(mockDay);
-    expect(widget.lines).toHaveLength(3);
-  });
-
-  test('header contains cross and formatted date', () => {
-    const widget = renderDashboardWidget(mockDay);
-    expect(widget.lines[0]).toContain('\u2626');
-    expect(widget.lines[0]).toContain('Orthodoxy');
-    expect(widget.lines[0]).toContain('2026');
-  });
-
-  test('includes feast summary', () => {
-    const widget = renderDashboardWidget(mockDay);
-    const line = widget.lines.at(1) ?? '';
-    expect(line).toContain('Sunday of the Prodigal Son');
-  });
-
-  test('includes fasting rule when present', () => {
-    const widget = renderDashboardWidget(mockDay);
-    const line = widget.lines.at(2) ?? '';
-    const stripped = line.replace(ANSI_RE, '');
-    expect(stripped).toContain('Fast Day (Wine and Oil Allowed)');
-  });
-
-  test('shows "No Fast" when fasting is null', () => {
-    const noFastDay: OrthodoxDay = { ...mockDay, fasting: null };
-    const widget = renderDashboardWidget(noFastDay);
-    const line = widget.lines.at(2) ?? '';
-    const stripped = line.replace(ANSI_RE, '');
-    expect(stripped).toContain('No Fast');
+  test('FeastsView renders without error', () => {
+    const instance = render(<FeastsView day={mockDay} />);
+    const frame = stripAnsi(instance.lastFrame() ?? '');
+    expect(frame).toContain('Feasts');
+    instance.cleanup();
   });
 });
 
-describe('plugin subcommand dispatch', () => {
+describe('OrthodoxyWidget', () => {
+  test('renders widget with liturgical data', async () => {
+    const result = await OrthodoxyWidget();
+    if (result !== null) {
+      const instance = render(<>{result}</>);
+      const frame = stripAnsi(instance.lastFrame() ?? '');
+      expect(frame).toContain('\u2626');
+      expect(frame).toContain('Orthodoxy');
+      instance.cleanup();
+    }
+  });
+});
+
+describe('plugin structure', () => {
   test('orthodoxyPlugin exports correct structure', async () => {
-    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.ts');
+    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.tsx');
     expect(orthodoxyPlugin.name).toBe('orthodoxy');
     expect(orthodoxyPlugin.commands).toHaveLength(1);
-    expect(orthodoxyPlugin.commands[0]!.name).toBe('orthodoxy');
+    const firstCmd = orthodoxyPlugin.commands[0];
+    expect(firstCmd).toBeDefined();
+    if (!firstCmd) return;
+    expect(firstCmd.name).toBe('orthodoxy');
   });
 
-  test('orthodoxyPlugin has a widget hook', async () => {
-    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.ts');
-    expect(orthodoxyPlugin.widget).toBeFunction();
-  });
-
-  test('widget hook returns a DashboardWidget with lines', async () => {
-    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.ts');
-    expect(orthodoxyPlugin.widget).toBeDefined();
-    const result = await orthodoxyPlugin.widget?.();
-    if (result !== null && result !== undefined) {
-      expect(result.lines).toBeInstanceOf(Array);
-      expect(result.lines.length).toBeGreaterThan(0);
-    }
+  test('orthodoxyPlugin has a Widget component', async () => {
+    const { orthodoxyPlugin } = await import('../../src/plugins/orthodoxy/index.tsx');
+    expect(orthodoxyPlugin.Widget).toBeFunction();
   });
 });
