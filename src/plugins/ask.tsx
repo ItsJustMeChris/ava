@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { render, Text } from 'ink';
 import { useApp } from 'ink';
 import { useEffect, useState } from 'react';
@@ -5,6 +6,25 @@ import type { AvaPlugin } from '../sdk/types.ts';
 import { buildSystemPrompt } from '../sdk/system-prompt.ts';
 import { llm } from '@providerprotocol/ai';
 import { openai } from '@providerprotocol/ai/openai';
+
+/** Reads all piped stdin content. Only call when stdin is not a TTY. */
+async function readPipedStdin(): Promise<string> {
+  return Bun.stdin.text();
+}
+
+/** Builds the full prompt from args and optional piped stdin content. */
+export function buildPrompt(argsPrompt: string, stdinContent: string): string {
+  const hasArgs = argsPrompt !== '';
+  const hasStdin = stdinContent !== '';
+
+  if (hasArgs && hasStdin) {
+    return `${argsPrompt}\n\n---\n\n${stdinContent}`;
+  }
+  if (hasStdin) {
+    return stdinContent;
+  }
+  return argsPrompt;
+}
 
 interface StreamingResponseProps {
   readonly prompt: string;
@@ -48,14 +68,22 @@ function StreamingResponse({ prompt }: StreamingResponseProps) {
 
 export const askPlugin: AvaPlugin = {
   name: 'ask',
-  description: 'Ask an LLM a question',
+  description: 'Ask an LLM a question (supports piped stdin)',
   commands: [
     {
       name: 'ask',
       description: 'Ask a question and get a streamed response',
-      usage: 'ask <prompt>',
+      usage: 'ask <prompt>  or  <cmd> | ava ask [prompt]',
       async execute(args) {
-        const prompt = args.join(' ').trim();
+        const argsPrompt = args.join(' ').trim();
+        const hasPipedInput = !process.stdin.isTTY;
+
+        let stdinContent = '';
+        if (hasPipedInput) {
+          stdinContent = (await readPipedStdin()).trim();
+        }
+
+        const prompt = buildPrompt(argsPrompt, stdinContent);
 
         if (prompt === '') {
           process.exitCode = 1;

@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { Box, Text } from 'ink';
 import type { OrthodoxDay } from './types.ts';
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { useApp } from 'ink';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';

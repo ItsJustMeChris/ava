@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { Box, Text } from 'ink';
 import { EntryLine } from './EntryLine.tsx';
 

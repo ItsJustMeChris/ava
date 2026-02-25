@@ -9,6 +9,7 @@ import { askPlugin } from './src/plugins/ask.tsx';
 import { chatPlugin } from './src/plugins/chat/index.tsx';
 import { randomPlugin } from './src/plugins/random/index.tsx';
 import { orthodoxyPlugin } from './src/plugins/orthodoxy/index.tsx';
+import { cmdPlugin } from './src/plugins/cmd.tsx';
 
 const registry = new PluginRegistry();
 registry.register(todoPlugin);
@@ -18,5 +19,6 @@ registry.register(askPlugin);
 registry.register(chatPlugin);
 registry.register(randomPlugin);
 registry.register(orthodoxyPlugin);
+registry.register(cmdPlugin);
 
 await runCli(registry, process.argv.slice(2));

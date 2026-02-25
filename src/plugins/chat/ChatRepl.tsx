@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { Box, Static, Text, useApp, useInput } from 'ink';
 import { TextInput } from '@inkjs/ui';
 import { useState, useCallback } from 'react';

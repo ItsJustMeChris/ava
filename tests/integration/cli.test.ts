@@ -10,9 +10,18 @@ function makeDataDir(): string {
   return join(SCRATCHPAD, crypto.randomUUID());
 }
 
-async function runCli(args: string[], dataDir: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+interface RunCliOptions {
+  readonly stdin?: string;
+}
+
+async function runCli(
+  args: string[],
+  dataDir: string,
+  options: RunCliOptions = {},
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   const proc = Bun.spawn(['bun', 'run', CLI_PATH, ...args], {
     env: { ...process.env, AVA_DATA_DIR: dataDir, NO_COLOR: '1' },
+    stdin: options.stdin !== undefined ? new Blob([options.stdin]) : undefined,
     stdout: 'pipe',
     stderr: 'pipe',
   });
@@ -197,6 +206,33 @@ describe('ask command integration', () => {
 
   test.skipIf(!hasOpenAIKey)('streams a response for a simple question', async () => {
     const { stdout, exitCode } = await runCli(['ask', 'What is 2+2? Reply with just the number.'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stripAnsi(stdout)).toContain('4');
+  }, 30_000);
+
+  test('exits with error when no prompt and no stdin', async () => {
+    const { stdout, stderr, exitCode } = await runCli(['ask'], makeDataDir(), { stdin: '' });
+    expect(exitCode).toBe(1);
+    const output = stripAnsi(stdout + stderr);
+    expect(output).toContain('Please provide a question');
+  });
+
+  test.skipIf(!hasOpenAIKey)('accepts piped stdin as context with prompt', async () => {
+    const { stdout, exitCode } = await runCli(
+      ['ask', 'What number appears in this content? Reply with just the number.'],
+      makeDataDir(),
+      { stdin: 'The answer is 42.' },
+    );
+    expect(exitCode).toBe(0);
+    expect(stripAnsi(stdout)).toContain('42');
+  }, 30_000);
+
+  test.skipIf(!hasOpenAIKey)('accepts piped stdin as the entire prompt', async () => {
+    const { stdout, exitCode } = await runCli(
+      ['ask'],
+      makeDataDir(),
+      { stdin: 'What is 2+2? Reply with just the number.' },
+    );
     expect(exitCode).toBe(0);
     expect(stripAnsi(stdout)).toContain('4');
   }, 30_000);
@@ -445,4 +481,50 @@ describe('orthodoxy command integration', () => {
     expect(exitCode).toBe(0);
     expect(stripAnsi(stdout)).toContain('orthodoxy');
   });
+});
+
+describe('cmd command integration', () => {
+  test('exits with error when no description provided', async () => {
+    const { stdout, stderr, exitCode } = await runCli(['cmd'], makeDataDir());
+    expect(exitCode).toBe(1);
+    const output = stripAnsi(stdout + stderr);
+    expect(output).toContain('Please describe the command you need');
+  });
+
+  test('exits with error when no description and empty stdin', async () => {
+    const { stdout, stderr, exitCode } = await runCli(['cmd'], makeDataDir(), { stdin: '' });
+    expect(exitCode).toBe(1);
+    const output = stripAnsi(stdout + stderr);
+    expect(output).toContain('Please describe the command you need');
+  });
+
+  test('shows cmd command in help output', async () => {
+    const { stdout, exitCode } = await runCli(['help'], makeDataDir());
+    expect(exitCode).toBe(0);
+    expect(stripAnsi(stdout)).toContain('cmd');
+  });
+
+  const hasOpenAIKey = process.env.OPENAI_API_KEY !== undefined && process.env.OPENAI_API_KEY !== '';
+
+  test.skipIf(!hasOpenAIKey)('generates a raw command in non-interactive mode', async () => {
+    const { stdout, exitCode } = await runCli(
+      ['cmd', 'list files in the current directory'],
+      makeDataDir(),
+      { stdin: '' },
+    );
+    expect(exitCode).toBe(0);
+    const output = stripAnsi(stdout).trim();
+    expect(output).toContain('ls');
+  }, 30_000);
+
+  test.skipIf(!hasOpenAIKey)('accepts piped stdin as context', async () => {
+    const { stdout, exitCode } = await runCli(
+      ['cmd', 'count the lines in this file listing'],
+      makeDataDir(),
+      { stdin: 'file1.txt\nfile2.txt\nfile3.txt' },
+    );
+    expect(exitCode).toBe(0);
+    const output = stripAnsi(stdout).trim();
+    expect(output.length).toBeGreaterThan(0);
+  }, 30_000);
 });

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { render } from 'ink-testing-library';
-import { askPlugin } from '../../src/plugins/ask.tsx';
+import { askPlugin, buildPrompt } from '../../src/plugins/ask.tsx';
 import { OneShotRenderer } from '../../src/components/OneShotRenderer.tsx';
 
 const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
@@ -16,10 +16,8 @@ afterEach(() => {
 describe('askPlugin', () => {
   test('has correct plugin structure', () => {
     expect(askPlugin.name).toBe('ask');
-    expect(askPlugin.description).toBe('Ask an LLM a question');
     expect(askPlugin.commands).toHaveLength(1);
     expect(askPlugin.commands[0]?.name).toBe('ask');
-    expect(askPlugin.commands[0]?.usage).toBe('ask <prompt>');
     expect(askPlugin.Widget).toBeUndefined();
   });
 
@@ -62,5 +60,24 @@ describe('askPlugin', () => {
       expect(frame).toContain('Please provide a question');
       instance.cleanup();
     }
+  });
+});
+
+describe('buildPrompt', () => {
+  test('returns args prompt when no stdin', () => {
+    expect(buildPrompt('What is 2+2?', '')).toBe('What is 2+2?');
+  });
+
+  test('returns stdin when no args prompt', () => {
+    expect(buildPrompt('', 'some piped content')).toBe('some piped content');
+  });
+
+  test('combines args and stdin with separator', () => {
+    const result = buildPrompt('explain this', 'error: something broke');
+    expect(result).toBe('explain this\n\n---\n\nerror: something broke');
+  });
+
+  test('returns empty string when both are empty', () => {
+    expect(buildPrompt('', '')).toBe('');
   });
 });

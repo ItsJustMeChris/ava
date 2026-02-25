@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { render, Text } from 'ink';
 import type { ReactNode } from 'react';
 import type { PluginRegistry } from './sdk/index.ts';

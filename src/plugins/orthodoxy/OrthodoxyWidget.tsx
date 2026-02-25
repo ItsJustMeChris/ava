@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import { Box, Text } from 'ink';
 import type { ReactNode } from 'react';
 import { parseIcsFile, findToday } from './parser.ts';
