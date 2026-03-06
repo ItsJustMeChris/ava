@@ -52,7 +52,8 @@ export function createDashboardPlugin(config: DashboardPluginConfig): AvaPlugin 
     const entries = await storage.loadAll();
     if (entries.length === 0) return null;
 
-    const recent = entries.slice(-MAX_SUMMARY_ENTRIES).reverse();
+    const recent = entries.slice(-MAX_SUMMARY_ENTRIES);
+    const startIndex = entries.length - recent.length;
 
     return (
       <Box flexDirection="column">
@@ -60,7 +61,7 @@ export function createDashboardPlugin(config: DashboardPluginConfig): AvaPlugin 
         {recent.map((e, i) => (
           <EntryLine
             key={e.id}
-            index={entries.length - 1 - i}
+            index={startIndex + i}
             text={e.text}
             time={formatRelativeTime(e.createdAt)}
           />

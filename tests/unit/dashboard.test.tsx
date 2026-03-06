@@ -244,10 +244,12 @@ describe('createDashboardPlugin', () => {
     const result = await widget();
     const frame = renderCommandOutput(result);
     expect(frame).toContain('Notes (4)');
-    expect(frame).toContain('fourth');
     expect(frame).toContain('third');
     expect(frame).toContain('second');
+    expect(frame).toContain('fourth');
     expect(frame).not.toContain('first');
+    expect(frame.indexOf('second')).toBeLessThan(frame.indexOf('third'));
+    expect(frame.indexOf('third')).toBeLessThan(frame.indexOf('fourth'));
   });
 
   test('Widget shows global indices for recent entries', async () => {
@@ -272,10 +274,12 @@ describe('createDashboardPlugin', () => {
 
     const result = await widget();
     const frame = renderCommandOutput(result);
-    expect(frame).toContain('4. fourth');
-    expect(frame).toContain('3. third');
     expect(frame).toContain('2. second');
-    expect(frame).not.toContain('1. fourth');
+    expect(frame).toContain('3. third');
+    expect(frame).toContain('4. fourth');
+    expect(frame).not.toContain('1. second');
+    expect(frame.indexOf('2. second')).toBeLessThan(frame.indexOf('3. third'));
+    expect(frame.indexOf('3. third')).toBeLessThan(frame.indexOf('4. fourth'));
   });
 
   test('Widget renders entries with timestamps', async () => {
