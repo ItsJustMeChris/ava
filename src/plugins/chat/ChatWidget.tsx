@@ -20,7 +20,12 @@ export async function ChatWidget(): Promise<ReactNode> {
     <Box flexDirection="column">
       <Text color="yellow">  Chats ({threads.length}):</Text>
       {recent.map((t, i) => (
-        <EntryLine key={t.id} index={i} text={t.title} time={formatRelativeTime(t.updatedAt)} />
+        <EntryLine
+          key={t.id}
+          index={threads.length - 1 - i}
+          text={t.title}
+          time={formatRelativeTime(t.updatedAt)}
+        />
       ))}
     </Box>
   );

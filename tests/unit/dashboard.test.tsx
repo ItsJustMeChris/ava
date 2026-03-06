@@ -250,6 +250,34 @@ describe('createDashboardPlugin', () => {
     expect(frame).not.toContain('first');
   });
 
+  test('Widget shows global indices for recent entries', async () => {
+    const plugin = createDashboardPlugin({
+      name: 'note',
+      plural: 'notes',
+      description: 'Take notes',
+      addVerb: 'Add',
+      dataDir,
+    });
+
+    const addCmd = plugin.commands[0];
+    if (!addCmd) throw new Error('Missing add command');
+
+    await addCmd.execute(['first']);
+    await addCmd.execute(['second']);
+    await addCmd.execute(['third']);
+    await addCmd.execute(['fourth']);
+
+    const widget = plugin.Widget;
+    if (!widget) throw new Error('Missing Widget');
+
+    const result = await widget();
+    const frame = renderCommandOutput(result);
+    expect(frame).toContain('4. fourth');
+    expect(frame).toContain('3. third');
+    expect(frame).toContain('2. second');
+    expect(frame).not.toContain('1. fourth');
+  });
+
   test('Widget renders entries with timestamps', async () => {
     const plugin = createDashboardPlugin({
       name: 'note',

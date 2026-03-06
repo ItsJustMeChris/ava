@@ -58,7 +58,12 @@ export function createDashboardPlugin(config: DashboardPluginConfig): AvaPlugin 
       <Box flexDirection="column">
         <Text color="yellow">  {title} ({entries.length}):</Text>
         {recent.map((e, i) => (
-          <EntryLine key={e.id} index={i} text={e.text} time={formatRelativeTime(e.createdAt)} />
+          <EntryLine
+            key={e.id}
+            index={entries.length - 1 - i}
+            text={e.text}
+            time={formatRelativeTime(e.createdAt)}
+          />
         ))}
       </Box>
     );
